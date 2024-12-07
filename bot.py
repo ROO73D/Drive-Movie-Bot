@@ -37,7 +37,7 @@ client = MongoClient("mongodb+srv://yellowflash:Password246M?@cluster0.nzv7x2e.m
 db = client.get_database('bifrost')
 ddlinks = db.bbg
 
-TOKEN = '6530908059:AAEsMAx3YoJoA04eCcfaLRskXOFtFkuUvqo'
+TOKEN = '6238674827:AAGvh-AGLlMTU3dQvKAqbUwS-ES9dlIOADI'
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -201,91 +201,129 @@ def start(message):
     CHAT_ID = -1002145126461
     USER_ID = message.from_user.id
     check_member = bot.get_chat_member(CHAT_ID, USER_ID)
+    
     if code == []:
-        bot.send_message(-1001975502922, text=f"#{message.chat.id}\n\nUsername : [{message.from_user.full_name}](tg://user?id={message.from_user.id})\n\nStarted for fun", parse_mode='markdown', disable_web_page_preview=True)
-        button = telebot.types.InlineKeyboardButton(text="⚡ Power House ", url=f"http://t.me/GdtotLinkz")
-        keyboard = telebot.types.InlineKeyboardMarkup().add(button)
-        bot.send_photo(chat_id=message.chat.id, photo=f"{random.choice(img_link)}", caption=f"Hey 👋🏻 `{str(message.chat.first_name)}`,\n\nThis 🤖 Bot is the Exclusive property of [Ye1lowFlash](https://t.me/Ye1lowFlash).\nIts a *Movie Search bot* , You'll get Movie as a google drive link\nTry searching `avengers` .\n\n*⚡️powered by* @GdtotLinkz", parse_mode="markdown", reply_markup=keyboard) 
+        # Log start command usage
+        bot.send_message(-1001975502922, text=f"#{message.chat.id}\n\nUsername : [{message.from_user.full_name}](tg://user?id={message.from_user.id})\n\nStarted bot", parse_mode='markdown', disable_web_page_preview=True)
+        
+        # Create welcome message with HTML formatting instead of markdown
+        welcome_text = (
+            f"👋 <b>Welcome {message.from_user.first_name}!</b>\n\n"
+            "🎬 I'm your personal <b>Movie Search Assistant</b>\n\n"
+            "🔍 <b>What I can do:</b>\n"
+            "• Search movies and TV shows\n"
+            "• Provide Google Drive download links\n"
+            "• Show file sizes and quality info\n\n"
+            "💡 <b>Try searching:</b> <code>avengers</code> or <code>stranger things</code>\n\n"
+            "🔗 <b>Join our channel:</b> @GdtotLinkz\n"
+            "⚡️ <i>Powered by @GdtotLinkz</i>"
+        )
+
+        # Create inline keyboard with multiple buttons
+        keyboard = telebot.types.InlineKeyboardMarkup(row_width=2)
+        
+        # Row 1 - Main buttons
+        btn_channel = telebot.types.InlineKeyboardButton("📢 Updates Channel", url="https://t.me/googledrive_moviesz")
+        btn_group = telebot.types.InlineKeyboardButton("💬 Support Group", url="https://t.me/GdtotLinkz")
+        keyboard.add(btn_channel, btn_group)
+        
+        # Row 2 - Additional buttons
+        btn_help = telebot.types.InlineKeyboardButton("❓ Help", callback_data="help")
+        keyboard.add(btn_help)
+
+        # Send styled welcome message with random image
+        bot.send_photo(
+            chat_id=message.chat.id,
+            photo=random.choice(img_link),
+            caption=welcome_text,
+            parse_mode="html",  # Changed to HTML parsing
+            reply_markup=keyboard
+        )
+        
     else:
         if check_member.status not in ["member", "creator", "administrator"]:
-            button = telebot.types.InlineKeyboardButton(text="Join Channel 🔗", url=f"https://t.me/+UHMom5MO8KU1MzFl")
-            button1 = telebot.types.InlineKeyboardButton(text="Try again 🔄 ", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
-            keyboard = telebot.types.InlineKeyboardMarkup().add(button).add(button1)
-            message_id1 = bot.send_message(chat_id=message.chat.id, text=f"Please *Join* My Status Channel and Try again to Get Link!", parse_mode='markdown', disable_web_page_preview=True, reply_markup=keyboard).message_id
+            # Create join channel message with HTML formatting
+            join_text = (
+                "<b>🔒 Access Restricted</b>\n\n"
+                "Please join our channel to continue using the bot.\n"
+                "This helps us keep the bot free and updated!"
+            )
+            
+            keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+            btn_join = telebot.types.InlineKeyboardButton("🔗 Join Channel", url="https://t.me/+UHMom5MO8KU1MzFl")
+            btn_retry = telebot.types.InlineKeyboardButton("🔄 Try Again", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
+            keyboard.add(btn_join, btn_retry)
+            
+            # Send join message with random image
+            bot.send_photo(
+                chat_id=message.chat.id,
+                photo=random.choice(img_link),
+                caption=join_text,
+                parse_mode="html",  # Changed to HTML parsing
+                reply_markup=keyboard
+            )
+            
         else:
-          if "Yellow" not in code[0]:
-              validate_short_token(message,code[0])
-              myquery = { "token": code[0] }
-              newvalues = { "$set": { "valid": True } }
-              tokens_collection.update_one(myquery, newvalues)
-              bot.send_message(-1001975502922, text=f"#{message.chat.id}\n\nUsername : [{message.from_user.full_name}](tg://user?id={message.from_user.id})\n\nGot verified ✅", parse_mode='markdown', disable_web_page_preview=True)
-          else:
-            bot.send_message(-1001975502922, text=f"#{message.chat.id}\n\nUsername : [{message.from_user.full_name}](tg://user?id={message.from_user.id})\n\nGot Link for `{code[0]}`", parse_mode='markdown', disable_web_page_preview=True)
-            print('movie thing')
-            token_data = tokens_collection.find_one({'user_id': message.from_user.id})
-            if token_data:
-              if token_data['expires_at'] > datetime.datetime.utcnow() and token_data['valid'] == True:
-                try:
-                    bot.delete_message(message.chat.id, message_id=message_id1)
-                except:
-                    pass
-                message_ids = bot.reply_to(message, text=f"𝐆𝐞𝐧𝐞𝐫𝐚𝐭𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 🔄", parse_mode='markdown', disable_web_page_preview=True).message_id
-                url = decrypt(code[0])
-                print(url)
-                data = list(links.find({"link": url}))
-                print(data)
-                link = data[0]['link']
-                title = data[0]['title']
-                if 'gdtot' in link:
-                    link = link.replace('new6.gdtot.cfd', 'new3.gdtot.dad')
-                    datafake = list(ddlinks.find({"title": data[0]['title']}))
-                    if datafake:
-                      try:
-                        print('doing bypass')
-                        bplink = genddl(datafake[0]['task_id'])
-                        print(bplink)
-                      except Exception as e:
-                        print(e)
-                        pass
-                elif 'filepress' in link:
-                    link = link.replace('https://filepress.click', 'new14.filepress.store')
-                elif 'appdrive' in link:
-                    link = link.replace('.pro', '.dev')
-                elif 'gdflix' in link:
-                    link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new1.gdflix.cfd/file/',link)
-                    try:
-                      # bplink = gdfbypass(link.replace('file','zfile'))
-                      print(bplink)
-                    except:
-                      bplink = 'none'
-                elif 'gofile' in link:
-                    link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/d\/','https://gofile.io/d/',link)
-                print(link)
-                if 'http' in bplink:
-                  try:
-                    text = f"🎥\t*{title}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {link}\n\n🌎*Bypassed Link :* ```{bplink}```\n\n*⚡powered by* @GdtotLinkz"
-                  except Exception as e:
-                    print(f"[bypass] {e}")
-                    text = f"🎥\t*{title}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {link}\n\n*⚡powered by* @GdtotLinkz"
-                else:
-                  text = f"🎥\t*{title}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {link}\n\n*⚡powered by* @GdtotLinkz"
-                # text = f"🎥\t*{data[0]['title']}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {gplink}\n\n*⚡powered by* @GdtotLinkz"
-                bot.delete_message(chat_id=message.chat.id, message_id=message_ids)
-                button1 = telebot.types.InlineKeyboardButton(text=f"Fast Dowload 🚀", url='https://publicearn.com/DDLHVN')
-                keyboard = telebot.types.InlineKeyboardMarkup().add(button1)
-                message_ids = bot.reply_to(message, text=text, parse_mode='markdown', disable_web_page_preview=True,reply_markup=keyboard)
-              else:
-                tokens_collection.delete_many({'user_id': message.from_user.id})
-                button1 = telebot.types.InlineKeyboardButton(text=f"verify ✅ ", url=f"{generate_adlink(message)}")
-                button2 = telebot.types.InlineKeyboardButton(text=f"Retry 🔄", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
-                keyboard = telebot.types.InlineKeyboardMarkup().add(button1).add(button2)
-                bot.reply_to(message, text=f"<code>Your token is expired,you need to verify before continuing !🤌</code> \n\n <b>click verify and then retry</b>", parse_mode="html", disable_web_page_preview=True,reply_markup=keyboard)
+            # Rest of your existing code for handling start with parameters
+            if "Yellow" not in code[0]:
+                validate_short_token(message,code[0])
+                myquery = { "token": code[0] }
+                newvalues = { "$set": { "valid": True } }
+                tokens_collection.update_one(myquery, newvalues)
+                bot.send_message(-1001975502922, text=f"#{message.chat.id}\n\nUsername : [{message.from_user.full_name}](tg://user?id={message.from_user.id})\n\nGot verified ✅", parse_mode='markdown', disable_web_page_preview=True)
             else:
-              tokens_collection.delete_many({'user_id': message.from_user.id})
-              button1 = telebot.types.InlineKeyboardButton(text=f"verify ✅ ", url=f"{generate_adlink(message)}")
-              button2 = telebot.types.InlineKeyboardButton(text=f"Retry 🔄", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
-              keyboard = telebot.types.InlineKeyboardMarkup().add(button1).add(button2)
-              bot.reply_to(message, text=f"<code>Your token is expired,you need to verify before continuing !🤌</code> \n\n <b>click verify and then retry</b>", parse_mode="html", disable_web_page_preview=True,reply_markup=keyboard)
+                bot.send_message(-1001975502922, text=f"#{message.chat.id}\n\nUsername : [{message.from_user.full_name}](tg://user?id={message.from_user.id})\n\nGot Link for `{code[0]}`", parse_mode='markdown', disable_web_page_preview=True)
+                print('movie thing')
+                token_data = tokens_collection.find_one({'user_id': message.from_user.id})
+                if token_data:
+                  if token_data['expires_at'] > datetime.datetime.utcnow() and token_data['valid'] == True:
+                    try:
+                        bot.delete_message(message.chat.id, message_id=message_id1)
+                    except:
+                        pass
+                    message_ids = bot.reply_to(message, text=f"𝐆𝐞𝐧𝐞𝐫𝐚𝐭𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 🔄", parse_mode='markdown', disable_web_page_preview=True).message_id
+                    url = decrypt(code[0])
+                    print(url)
+                    data = list(links.find({"link": url}))
+                    print(data)
+                    link = data[0]['link']
+                    title = data[0]['title']
+                    if 'gdtot' in link:
+                        link = link.replace('new6.gdtot.cfd', 'new3.gdtot.dad')
+                    elif 'filepress' in link:
+                        link = link.replace('https://filepress.click', 'new14.filepress.store')
+                    elif 'appdrive' in link:
+                        link = link.replace('.pro', '.dev')
+                    elif 'gdflix' in link:
+                        link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new1.gdflix.cfd/file/',link)
+                    elif 'gofile' in link:
+                        link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/d\/','https://gofile.io/d/',link)
+                    print(link)
+                    if 'http' in bplink:
+                      try:
+                        text = f"🎥\t*{title}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {link}\n\n🌎*Bypassed Link :* ```{bplink}```\n\n*⚡powered by* @GdtotLinkz"
+                      except Exception as e:
+                        print(f"[bypass] {e}")
+                        text = f"🎥\t*{title}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {link}\n\n*⚡powered by* @GdtotLinkz"
+                    else:
+                      text = f"🎥\t*{title}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {link}\n\n*⚡powered by* @GdtotLinkz"
+                    # text = f"🎥\t*{data[0]['title']}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {gplink}\n\n*⚡powered by* @GdtotLinkz"
+                    bot.delete_message(chat_id=message.chat.id, message_id=message_ids)
+                    button1 = telebot.types.InlineKeyboardButton(text=f"Fast Dowload 🚀", url='https://publicearn.com/DDLHVN')
+                    keyboard = telebot.types.InlineKeyboardMarkup().add(button1)
+                    message_ids = bot.reply_to(message, text=text, parse_mode='markdown', disable_web_page_preview=True,reply_markup=keyboard)
+                  else:
+                    tokens_collection.delete_many({'user_id': message.from_user.id})
+                    button1 = telebot.types.InlineKeyboardButton(text=f"verify ✅ ", url=f"{generate_adlink(message)}")
+                    button2 = telebot.types.InlineKeyboardButton(text=f"Retry 🔄", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
+                    keyboard = telebot.types.InlineKeyboardMarkup().add(button1).add(button2)
+                    bot.reply_to(message, text=f"<code>Your token is expired,you need to verify before continuing !🤌</code> \n\n <b>click verify and then retry</b>", parse_mode="html", disable_web_page_preview=True,reply_markup=keyboard)
+                else:
+                  tokens_collection.delete_many({'user_id': message.from_user.id})
+                  button1 = telebot.types.InlineKeyboardButton(text=f"verify ✅ ", url=f"{generate_adlink(message)}")
+                  button2 = telebot.types.InlineKeyboardButton(text=f"Retry 🔄", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
+                  keyboard = telebot.types.InlineKeyboardMarkup().add(button1).add(button2)
+                  bot.reply_to(message, text=f"<code>Your token is expired,you need to verify before continuing !🤌</code> \n\n <b>click verify and then retry</b>", parse_mode="html", disable_web_page_preview=True,reply_markup=keyboard)
 
 @bot.message_handler(commands=['shundi']) 
 def shundi(message):
@@ -307,6 +345,10 @@ def shundi(message):
  
 @bot.message_handler(func=lambda message: True, content_types=['text', 'photo'])
 def handle_all_messages(message):
+    # Store results per user
+    if not hasattr(bot, 'user_results'):
+        bot.user_results = {}
+    
     movie = message.caption
     headers = {
         'authority': 'new.gdtot.dad',
@@ -342,13 +384,96 @@ def handle_all_messages(message):
             link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://gdflix.lol/file/',link.strip())
         elif 'gofile' in link:
             link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/d\/','https://gofile.io/d/',link.strip())
+        elif 'hubcloud' in link:
+            link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://hubcloud.day/drive/',link.strip())
         data = list(links.find({"link": link}))
         if data:
           print(data)
           pass
         else:
           try:
-            if 'gdtot' in i:
+            if 'hubcloud' in i:
+              headers = {
+                  'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                  'accept-language': 'en-US,en;q=0.9',
+                  'priority': 'u=0, i',
+                  'referer': 'https://hubcloud-day.cdn.ampproject.org/',
+                  'sec-ch-ua': '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+                  'sec-ch-ua-mobile': '?0',
+                  'sec-ch-ua-platform': '"Windows"',
+                  'sec-fetch-dest': 'document',
+                  'sec-fetch-mode': 'navigate',
+                  'sec-fetch-site': 'cross-site',
+                  'upgrade-insecure-requests': '1',
+                  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+              }
+              url = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/drive\/','https://hubcloud.day/drive/',i.strip())
+              url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/drive\/','https://hubcloud.club/drive/',i.strip())
+              response = requests.get(url1, headers=headers)
+
+              soup = BeautifulSoup(response.text, 'html.parser')
+
+              title = soup.title.text
+              size = soup.find('i',{'id':'size'}).text
+              try:
+                  m = re.split(r".[1-90]{4}",title)
+                  n = re.search(r"[1-90]{4}",title)
+                  k = re.sub("\.", " ", m[0])
+                  new_title = f"{k} {n.group(0)}"
+              except:
+                  m = re.split(r".[1-90]{3}",title)
+                  k = re.sub("\.", " ", m[0])
+                  new_title = f"{k}"
+              headers = {
+                  'authority': 'www.imdb.com',
+                  'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                  'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',
+                  'cache-control': 'max-age=0',
+                  # 'cookie': 'session-id=137-1418442-7241252; session-id-time=2082787201l; ubid-main=132-4293222-1837241; uu=eyJpZCI6InV1YTVkMDM5Y2MyMmQyNDhiM2E2MjgiLCJwcmVmZXJlbmNlcyI6eyJmaW5kX2luY2x1ZGVfYWR1bHQiOmZhbHNlfX0=; session-token=XzBAGk2vd+ifdVA/sBvqo/8kPhLpAWkmAPr/2qUxoPii0cH2NAkCJ7RDHhHk0r8HTOiVmFA5td05R5jQGq1b6MbU8EeFosJ3bqCRSxGUdhGDluU7nZsQ53wmI5p4anJMnc/2om9uoZAFY/P2OQYgQFDNl4TaebDeMmSIN48mXo9ATJKjw1Gn0EKerQX+GXNB/XcLv8hroidvbLDdav8Xpw==; csm-hit=tb:P6R3VZ1QCD3ZJ1K0B0BR+s-T20E02TGW8B7GQ8ZQ4W5|1678378591458&t:1678378591461&adb:adblk_no',
+                  'sec-ch-ua': '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";v="110"',
+                  'sec-ch-ua-mobile': '?0',
+                  'sec-ch-ua-platform': '"Windows"',
+                  'sec-fetch-dest': 'document',
+                  'sec-fetch-mode': 'navigate',
+                  'sec-fetch-site': 'none',
+                  'sec-fetch-user': '?1',
+                  'upgrade-insecure-requests': '1',
+                  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+              }
+              try:
+                html = requests.get(f"https://www.imdb.com/find/?q={new_title.replace('Copy of ','')}&ref_=nv_sr_sm",headers=headers)
+                soup1 = BeautifulSoup(html.text,'lxml')
+                print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+              except:
+                try:
+                  html = requests.get(f"https://www.imdb.com/find/?q={new_title.split(' ')[0]}&ref_=nv_sr_sm",headers=headers)
+                  soup1 = BeautifulSoup(html.text,'lxml')
+                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                except:
+                  print(f"{id} : {url} : {new_title} : Nil")
+              try:
+                new_one = {
+                "id":f"{id}",
+                "title":f"{title}",
+                "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}",
+                "link":f"{url}",
+                "size": f"{size}",
+                "indexTitle":f"{new_title}"
+                }
+              except:
+                new_one = {
+                "id":f"{id}",
+                "title":f"{title}",
+                "imdbId":f"Nil",
+                "link":f"{url}",
+                "size": f"{size}",
+                "indexTitle":f"{new_title}"
+                }
+              links.insert_one(new_one)
+              id+=1
+              bot.reply_to(message, text=f"Added {url} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
+
+            elif 'gdtot' in i:
               url = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new6.gdtot.cfd/file/',i.strip())
               url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new7.gdtot.dad/file/',i.strip())
               html = requests.get(f"{url1}",headers=headers)
@@ -839,15 +964,15 @@ def handle_all_messages(message):
             }
         ])
         id = 1
-        global all_links
-        all_links = []
         data = []
         li = list(result)
+        user_links = []
+        
         for i in list(li):
             if i['score'] > 3:
                 if id >= 5:
                     data.append("<b>⚡️powered by @GdtotLinkz</b>")
-                    all_links.append(data)
+                    user_links.append(data)
                     data = []
                     id = 1
                 else:
@@ -862,8 +987,9 @@ def handle_all_messages(message):
                             ec_link = f"flpYellow{encrypt(i['link'].strip().split('/')[-1])}"
                         elif 'gofile' in i['link']:
                             ec_link = f"gofYellow{encrypt(i['link'].split('/')[-1])}"
+                        elif 'gdflix' in i['link']:
+                            ec_link = f"hubYellow{encrypt(i['link'].split('/')[-1])}"
                         text = f"🎥 <b>Title</b> : <code>{i['title']}  [{i['size']}]</code>\n\n 🔗 <b>Link</b> : <a href='https://t.me/DriveMovie_bot?start={ec_link}'>Download</a>\n\n"
-                        print(ec_link)
                         data.append(text)
                         id += 1
                     except Exception as e:
@@ -872,18 +998,22 @@ def handle_all_messages(message):
                             print({i['link']})
                         except:
                             pass
+
         if len(data) <= 4:
             if len(data) != 0:
                 data.append("<b>⚡️powered by @GdtotLinkz</b>")
-                all_links.append(data)
+                user_links.append(data)
+
+        # Store results for this user
+        bot.user_results[message.from_user.id] = user_links
 
         if text == "No Links found !":
             bot.delete_message(chat_id=message.chat.id, message_id=message_ids)
             bot.reply_to(message, text=text, parse_mode="html", disable_web_page_preview=True)
         else:
-            text = make_text(all_links, 0)
+            text = make_text(bot.user_results[message.from_user.id], 0)
             bot.delete_message(chat_id=message.chat.id, message_id=message_ids)
-            message_ids = bot.reply_to(message, text=make_text(all_links, 0), parse_mode="html", disable_web_page_preview=True, reply_markup=makeKeyboard(1, 1)).message_id
+            message_ids = bot.reply_to(message, text=make_text(bot.user_results[message.from_user.id], 0), parse_mode="html", disable_web_page_preview=True, reply_markup=makeKeyboard(1, 1)).message_id
 
 def make_text(all_links, i=0):
     text = ''
@@ -923,6 +1053,8 @@ def decrypt(link):
         return realLink
     elif id == 'gof':
         realLink = f"https://gofile.io/d/{newLink.decode()}"
+    elif id == 'hub':
+        realLink = f"https://hubcloud.club/drive/16v115txpz1n6z1{newLink.decode()}"
         return realLink
 
 def encrypt(link):
@@ -937,63 +1069,27 @@ def makeKeyboard(id1=0, id2=0):
     keyboard = telebot.types.InlineKeyboardMarkup().add(button1).add(button2)
     return keyboard
 
-@bot.callback_query_handler(func=lambda message: True)
+@bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    for key, value in enumerate(all_links):
+    # Get results for this specific user
+    user_links = bot.user_results.get(call.from_user.id, [])
+    
+    for key, value in enumerate(user_links):
         if call.data == f"next{key}":
-            bot.edit_message_text(text=f"{make_text(all_links, key)}",
-                                  chat_id=call.message.chat.id,
-                                  message_id=call.message.id,
-                                  parse_mode="html", disable_web_page_preview=True,
-                                  reply_markup=makeKeyboard(key + 1, key))
+            bot.edit_message_text(text=f"{make_text(user_links, key)}",
+                                chat_id=call.message.chat.id,
+                                message_id=call.message.id,
+                                parse_mode="html", disable_web_page_preview=True,
+                                reply_markup=makeKeyboard(key + 1, key))
         elif call.data == f"prev{key}":
-            bot.edit_message_text(text=f"{make_text(all_links, int(key) - 1)}",
-                                  chat_id=call.message.chat.id,
-                                  message_id=call.message.id,
-                                  parse_mode="html", disable_web_page_preview=True,
-                                  reply_markup=makeKeyboard(key, int(key) - 1))
+            bot.edit_message_text(text=f"{make_text(user_links, int(key) - 1)}",
+                                chat_id=call.message.chat.id,
+                                message_id=call.message.id,
+                                parse_mode="html", disable_web_page_preview=True,
+                                reply_markup=makeKeyboard(key, int(key) - 1))
         else:
             pass
-
-def dispose():
-     print('Starting To Delete Files')
-     folders = ['0AJtbwLEZZtnjUk9PVA']
-     scopes = ['https://www.googleapis.com/auth/drive']
-     credentials = ServiceAccountCredentials.from_json_keyfile_name(f'Accounts/{random.randint(0, 99)}.json', scopes)
-     http_auth = credentials.authorize(Http())
-     service = build('drive', 'v3', http=http_auth)
-     for folder in folders:
-         items = []
-         pageToken = ""
-         while pageToken is not None:
-             response = service.files().list(q="'" + folder + "' in parents and trashed = false", pageSize=1000, pageToken=pageToken,includeItemsFromAllDrives=True, supportsAllDrives=True, corpora="allDrives", fields="nextPageToken, files(id,name)").execute()
-             items.extend(response.get('files', []))
-             pageToken = response.get('nextPageToken')
-         if items != []:
-            for id in items:
-                body = {'trashed': True}
-                try :
-                    updated_file = service.files().update(fileId=id['id'], body=body,supportsAllDrives=True).execute()
-                    name = updated_file['name']
-                    print(f"Deleting : {name}")
-                except Exception as e:
-                    print(e)
-                    pass
-                 
-def generate_short_token(message,length=6):
-    token = ''.join(random.choices(string.ascii_letters + string.digits, k=length))
-    expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=2)
-    token_data = {
-        'token': token,
-        'expires_at': expiration_time,
-        "user_id" : message.from_user.id,
-        "valid" : False
-    }
-    tokens_collection.insert_one(token_data)
-    return token
-
-
-
+          
 def validate_short_token(message,token):
     token_data = tokens_collection.find_one({'user_id': message.from_user.id})
     if token_data:
@@ -1011,64 +1107,59 @@ def validate_short_token(message,token):
         keyboard = telebot.types.InlineKeyboardMarkup().add(button1)
         bot.reply_to(message, text=f"Token is old ⌛,<code>Generate New one and verify ✅</code>", parse_mode="html", disable_web_page_preview=True,reply_markup=keyboard)
     return False
-
+          
 def generate_adlink(message):
-  # html = requests.get(f"https://gplinks.in/api?api=14babc9511f3680505742438efe33ba2c7026c43&url={link}")
-  html = requests.get(f"https://publicearn.com/api?api=a1bb968c95a6bbe5b9ad636986ad36dc5276bbdb&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
+  html = requests.get(f"https://gplinks.in/api?api=14babc9511f3680505742438efe33ba2c7026c43&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
+  # html = requests.get(f"https://publicearn.com/api?api=a1bb968c95a6bbe5b9ad636986ad36dc5276bbdb&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
   linker = json.loads(html.text)['shortenedUrl']
   html = requests.get(linker)
   return html.url
- 
-def genddl(taskid):
-  cookies = {
-      'PHPSESSID': '1b9jajssdm055kgj3bom03n3vm',
-  }
-  headers = {
-      'accept': '*/*',
-      'accept-language': 'en-US,en;q=0.9',
-      'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      # 'cookie': 'PHPSESSID=8mre86giff09if9k0gtkdpmptm',
-      'origin': 'https://new3.gdtot.dad',
-      'priority': 'u=1, i',
-      'referer': 'https://new3.gdtot.dad/ondl',
-      'sec-ch-ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-      'sec-ch-ua-mobile': '?1',
-      'sec-ch-ua-platform': '"Android"',
-      'sec-fetch-dest': 'empty',
-      'sec-fetch-mode': 'cors',
-      'sec-fetch-site': 'same-origin',
-      'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
-      'x-requested-with': 'XMLHttpRequest',
-  }
 
-  params = {
-      'ajax': 'chksts',
-  }
+def generate_short_token(message,length=6):
+    token = ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+    expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+    token_data = {
+        'token': token,
+        'expires_at': expiration_time,
+        "user_id" : message.from_user.id,
+        "valid" : False
+    }
+    tokens_collection.insert_one(token_data)
+    return token
 
-  data = {
-      'task_id': f'{taskid}',
-      'sizee': '5.76 GB',
-      'gdid': '10122712544',
-  }
+# Add a help message handler for the help button
+@bot.callback_query_handler(func=lambda call: call.data == "help")
+def help_handler(call):
+    help_text = (
+        "*📖 How to Use This Bot*\n\n"
+        "1️⃣ Simply send any movie or TV show name\n"
+        "2️⃣ Select from the search results\n"
+        "3️⃣ Click the download link\n"
+        "4️⃣ Complete verification (if required)\n\n"
+        "*🤔 Common Issues:*\n"
+        "• If links don't work, try regenerating\n"
+        "• Make sure you're joined to our channel\n"
+        "• For support, contact @YellowFlash\n\n"
+        "⚡️ _Powered by @GdtotLinkz_"
+    )
+    
+    keyboard = telebot.types.InlineKeyboardMarkup()
+    btn_back = telebot.types.InlineKeyboardButton("🔙 Back", callback_data="back_to_start")
+    keyboard.add(btn_back)
+    
+    bot.edit_message_text(
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+        text=help_text,
+        parse_mode="markdown",
+        reply_markup=keyboard
+    )
 
-  response = requests.post('https://new3.gdtot.dad/ajax.php', params=params, cookies=cookies, headers=headers, data=data)
-  print(response.text)
-  url = response.json()['download']
-  if 'http' in url:
-    return url
-  else:
-   return 'none'
-   
-   
-def gdfbypass(link):
-  post_body = {
-    "cmd": "request.get",
-    "url":f"{link}",
-    "maxTimeout": 120000
-  }
-  response = requests.post('https://flr-65c636259ed4.herokuapp.com/v1', headers={'Content-Type': 'application/json'}, json=post_body)
-  fsdata = json.loads(response.text)
-  soup = BeautifulSoup(fsdata['solution']['response'],'lxml')
-  return soup.find('a',{'class':'btn-success'})['href']
+# Add handler for back button
+@bot.callback_query_handler(func=lambda call: call.data == "back_to_start")
+def back_to_start(call):
+    # Recreate and send the original start message
+    start(call.message)
+
   
 bot.infinity_polling(timeout=10, long_polling_timeout=5)
