@@ -393,25 +393,24 @@ def handle_all_messages(message):
         else:
           try:
             if 'hubcloud' in i:
-              headers = {
-                  'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                  'accept-language': 'en-US,en;q=0.9',
-                  'priority': 'u=0, i',
-                  'referer': 'https://hubcloud-day.cdn.ampproject.org/',
-                  'sec-ch-ua': '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
-                  'sec-ch-ua-mobile': '?0',
-                  'sec-ch-ua-platform': '"Windows"',
-                  'sec-fetch-dest': 'document',
-                  'sec-fetch-mode': 'navigate',
-                  'sec-fetch-site': 'cross-site',
-                  'upgrade-insecure-requests': '1',
-                  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+             headers = {
+                 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                 'accept-language': 'en-US,en;q=0.9',
+                 'cache-control': 'max-age=0',
+                 'if-modified-since': 'Sun, 08 Dec 2024 12:43:33 GMT',
+                 'priority': 'u=0, i',
+                 'sec-fetch-dest': 'document',
+                 'sec-fetch-mode': 'navigate',
+                 'sec-fetch-site': 'none',
+                 'sec-fetch-user': '?1',
+                 'upgrade-insecure-requests': '1',
+                 'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
               }
               url = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/drive\/','https://hubcloud.day/drive/',i.strip())
-              url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/drive\/','https://hubcloud.club/drive/',i.strip())
+              url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/drive\/','https://hubcloud.day/drive/',i.strip())
               response = requests.get(url1, headers=headers)
 
-              soup = BeautifulSoup(response.text, 'html.parser')
+              soup = BeautifulSoup(response.text, 'lxml')
 
               title = soup.title.text
               size = soup.find('i',{'id':'size'}).text
@@ -444,13 +443,16 @@ def handle_all_messages(message):
                 html = requests.get(f"https://www.imdb.com/find/?q={new_title.replace('Copy of ','')}&ref_=nv_sr_sm",headers=headers)
                 soup1 = BeautifulSoup(html.text,'lxml')
                 print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                bot.reply_to(message, text=f"Added {url} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
               except:
                 try:
                   html = requests.get(f"https://www.imdb.com/find/?q={new_title.split(' ')[0]}&ref_=nv_sr_sm",headers=headers)
                   soup1 = BeautifulSoup(html.text,'lxml')
                   print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                  bot.reply_to(message, text=f"Added {url} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
                 except:
                   print(f"{id} : {url} : {new_title} : Nil")
+                  bot.reply_to(message, text=f"Added {url} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
               try:
                 new_one = {
                 "id":f"{id}",
