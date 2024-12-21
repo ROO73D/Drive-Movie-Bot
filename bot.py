@@ -25,6 +25,8 @@ from urllib.parse import unquote
 import datetime
 import string
 from aiohttp import web
+import asyncio
+import os
 
 client = MongoClient("mongodb+srv://notpointbreak:Password246M@cluster0.gzxc2sc.mongodb.net/?retryWrites=true&w=majority")
 db = client.get_database('bifrost')
@@ -1068,4 +1070,31 @@ def generate_short_token(message,length=6):
     tokens_collection.insert_one(token_data)
     return token
   
-bot.infinity_polling(timeout=10, long_polling_timeout=5)
+# Add this new function to handle web requests
+async def handle_webhook(request):
+    return web.Response(text="Bot is running")
+
+# Modify the bottom of the file to use asyncio
+async def setup_webhook():
+    app = web.Application()
+    app.router.add_get('/', handle_webhook)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', int(os.getenv('PORT', 8080)))
+    await site.start()
+
+async def main():
+    # Start the webhook server
+    await setup_webhook()
+    
+    # Start the bot polling in the background
+    while True:
+        try:
+            # Use non-async polling since telebot doesn't support async polling
+            bot.polling(timeout=10, long_polling_timeout=5)
+        except Exception as e:
+            print(f"Bot polling error: {e}")
+            await asyncio.sleep(5)
+
+if __name__ == '__main__':
+    asyncio.run(main())
