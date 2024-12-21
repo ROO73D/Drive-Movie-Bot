@@ -1066,6 +1066,26 @@ def generate_short_token(message,length=6):
     }
     tokens_collection.insert_one(token_data)
     return token
+ 
+async def start_http_server():
+    async def handle(request):
+        return web.Response(text="Server is running")
+    
+    app = web.Application()
+    app.add_routes([web.get('/', handle)])
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8080)  # Bind to port 8080
+    await site.start()
+    print("HTTP server running on port 8080")
 
+async def main():
+    await start_http_server()
+    async with client:
+        await client.run_until_disconnected()
+
+# Run the event loop
+import asyncio
+asyncio.run(main())
   
 bot.infinity_polling(timeout=10, long_polling_timeout=5)
