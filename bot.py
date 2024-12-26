@@ -211,7 +211,7 @@ def start(message):
         bot.send_photo(chat_id=message.chat.id, photo=f"{random.choice(img_link)}", caption=f"Hey 👋🏻 `{str(message.chat.first_name)}`,\n\nThis 🤖 Bot is the Exclusive property of [Ye1lowFlash](https://t.me/Ye1lowFlash).\nIts a *Movie Search bot* , You'll get Movie as a google drive link\nTry searching `avengers` .\n\n*⚡️powered by* @GdtotLinkz", parse_mode="markdown", reply_markup=keyboard) 
     else:
         if check_member.status not in ["member", "creator", "administrator"]:
-            button = telebot.types.InlineKeyboardButton(text="Join Channel 🔗", url=f"https://t.me/+r4CARy3iwU0wNmY1")
+            button = telebot.types.InlineKeyboardButton(text="Join Channel 🔗", url=f"https://t.me/+V31K8RPlAmEzMDRl")
             button1 = telebot.types.InlineKeyboardButton(text="Try again 🔄 ", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
             keyboard = telebot.types.InlineKeyboardMarkup().add(button).add(button1)
             message_id1 = bot.send_message(chat_id=message.chat.id, text=f"Please *Join* My Status Channel and Try again to Get Link!", parse_mode='markdown', disable_web_page_preview=True, reply_markup=keyboard).message_id
@@ -953,14 +953,27 @@ def make_text(all_links, i=0):
 
 def extract_arg(arg):
     return arg.split()[1:]
-
-def is_subscribed(chat_id, user_id):
+ 
+def is_subscribed_or_requested(chat_id, user_id):
     try:
-        bot.get_chat_member(chat_id, user_id)
-        return True
+        member = bot.get_chat_member(chat_id, user_id)
+        # Check if the user is a member or has requested to join
+        if member.status in ['member', 'administrator', 'creator', 'restricted']:
+            return True
+        elif member.status == 'member_request':
+            return True
+        return False
     except telebot.apihelper.ApiTelegramException as e:
-        if e.result_json['description'] == 'Bad Request: user not found':
+        # Handle specific case of 'user not found'
+        if 'description' in e.result_json and e.result_json['description'] == 'Bad Request: user not found':
             return False
+        # Handle other exceptions related to API issues
+        raise e
+    except Exception as ex:
+        # Handle any other unexpected errors
+        print(f"An unexpected error occurred: {ex}")
+        return False
+
 
 def decrypt(link):
     link0 = link.replace('WVsbG93Rmxhc2g','')[9::]
