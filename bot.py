@@ -203,14 +203,14 @@ def start(message):
     code = extract_arg(message.text)
     CHAT_ID = -1002161455712
     USER_ID = message.from_user.id
-    check_member = bot.get_chat_member(CHAT_ID, USER_ID)
+ 
     if code == []:
         bot.send_message(-1001975502922, text=f"#{message.chat.id}\n\nUsername : [{message.from_user.full_name}](tg://user?id={message.from_user.id})\n\nStarted for fun", parse_mode='markdown', disable_web_page_preview=True)
         button = telebot.types.InlineKeyboardButton(text="⚡ Power House ", url=f"http://t.me/GdtotLinkz")
         keyboard = telebot.types.InlineKeyboardMarkup().add(button)
         bot.send_photo(chat_id=message.chat.id, photo=f"{random.choice(img_link)}", caption=f"Hey 👋🏻 `{str(message.chat.first_name)}`,\n\nThis 🤖 Bot is the Exclusive property of [Ye1lowFlash](https://t.me/Ye1lowFlash).\nIts a *Movie Search bot* , You'll get Movie as a google drive link\nTry searching `avengers` .\n\n*⚡️powered by* @GdtotLinkz", parse_mode="markdown", reply_markup=keyboard) 
     else:
-        if check_member.status not in ["member", "creator", "administrator"]:
+        if not check_subscription(bot,CHAT_ID, USER_ID):
             button = telebot.types.InlineKeyboardButton(text="Join Channel 🔗", url=f"https://t.me/+V31K8RPlAmEzMDRl")
             button1 = telebot.types.InlineKeyboardButton(text="Try again 🔄 ", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
             keyboard = telebot.types.InlineKeyboardMarkup().add(button).add(button1)
@@ -954,25 +954,21 @@ def make_text(all_links, i=0):
 def extract_arg(arg):
     return arg.split()[1:]
  
-def is_subscribed_or_requested(chat_id, user_id):
+     
+def check_subscription(bot, chat_id,user_id):
     try:
         member = bot.get_chat_member(chat_id, user_id)
-        # Check if the user is a member or has requested to join
+        join_requests = bot.get_chat_join_requests(chat_id=chat_id)
         if member.status in ['member', 'administrator', 'creator', 'restricted']:
             return True
-        elif member.status == 'member_request':
-            return True
+        else:
+            for request in join_requests.requests:
+                if request.user.id == user_id:
+                    print(f"user already in fsub channel")
+                    return True
         return False
-    except telebot.apihelper.ApiTelegramException as e:
-        # Handle specific case of 'user not found'
-        if 'description' in e.result_json and e.result_json['description'] == 'Bad Request: user not found':
-            return False
-        # Handle other exceptions related to API issues
-        raise e
-    except Exception as ex:
-        # Handle any other unexpected errors
-        print(f"An unexpected error occurred: {ex}")
-        return False
+    except:
+        pass
 
 
 def decrypt(link):
