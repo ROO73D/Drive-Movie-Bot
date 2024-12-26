@@ -201,7 +201,7 @@ def appdrive(link,id,message):
 def start(message):
     bplink = 'none'
     code = extract_arg(message.text)
-    CHAT_ID = -1002145126461
+    CHAT_ID = -1002161455712
     USER_ID = message.from_user.id
     check_member = bot.get_chat_member(CHAT_ID, USER_ID)
     if code == []:
@@ -211,7 +211,7 @@ def start(message):
         bot.send_photo(chat_id=message.chat.id, photo=f"{random.choice(img_link)}", caption=f"Hey 👋🏻 `{str(message.chat.first_name)}`,\n\nThis 🤖 Bot is the Exclusive property of [Ye1lowFlash](https://t.me/Ye1lowFlash).\nIts a *Movie Search bot* , You'll get Movie as a google drive link\nTry searching `avengers` .\n\n*⚡️powered by* @GdtotLinkz", parse_mode="markdown", reply_markup=keyboard) 
     else:
         if check_member.status not in ["member", "creator", "administrator"]:
-            button = telebot.types.InlineKeyboardButton(text="Join Channel 🔗", url=f"https://t.me/+UHMom5MO8KU1MzFl")
+            button = telebot.types.InlineKeyboardButton(text="Join Channel 🔗", url=f"https://t.me/+r4CARy3iwU0wNmY1")
             button1 = telebot.types.InlineKeyboardButton(text="Try again 🔄 ", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
             keyboard = telebot.types.InlineKeyboardMarkup().add(button).add(button1)
             message_id1 = bot.send_message(chat_id=message.chat.id, text=f"Please *Join* My Status Channel and Try again to Get Link!", parse_mode='markdown', disable_web_page_preview=True, reply_markup=keyboard).message_id
@@ -276,23 +276,7 @@ def start(message):
               keyboard = telebot.types.InlineKeyboardMarkup().add(button1).add(button2)
               bot.reply_to(message, text=f"<code>Your token is expired,you need to verify before continuing !🤌</code> \n\n <b>click verify and then retry</b>", parse_mode="html", disable_web_page_preview=True,reply_markup=keyboard)
 
-@bot.message_handler(commands=['shundi']) 
-def shundi(message):
- url = "https://api3.adsterratools.com/publisher/stats.json"
- today = date.today()
- querystring = {"start_date":"2024-03-27","finish_date":f"{today}","group_by":"date"}
- 
- headers = {
-     "Accept": "application/json",
-     "X-API-Key": "29a28d2905fa22942d03d027b42d0e13"
- }
- 
- response = requests.get(url, headers=headers, params=querystring)
- stat = response.json()
- print(stat)
- bot.reply_to(message, text=stat, parse_mode="html", disable_web_page_preview=True)
- bot.send_message(chat_id=message.chat.id, text=response.text, parse_mode='markdown', disable_web_page_preview=True)
- bot.send_message(chat_id=message.chat.id, text=BeautifulSoup(response.text,'lxml'), parse_mode='markdown', disable_web_page_preview=True)
+
  
 @bot.message_handler(func=lambda message: True, content_types=['text', 'photo'])
 def handle_all_messages(message):
