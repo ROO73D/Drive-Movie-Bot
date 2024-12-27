@@ -531,7 +531,7 @@ def handle_all_messages(message):
               bot.reply_to(message, text=f"Added {url1} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
             elif 'gdtot' in i:
               url = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new6.gdtot.cfd/file/',i.strip())
-              url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new9.gdtot.dad/file/',i.strip())
+              url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new10.gdtot.dad/file/',i.strip())
               html = requests.get(f"{url1}",headers=headers)
               soup = BeautifulSoup(html.text,'lxml')
               title = soup.title.text[8::]
