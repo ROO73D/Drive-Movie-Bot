@@ -19,14 +19,16 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from oauth2client.service_account import ServiceAccountCredentials
 from httplib2 import Http
-import clone
 from datetime import date
 from urllib.parse import unquote
 import datetime
-import string
 from aiohttp import web
 import asyncio
 import os
+import datetime 
+import threading
+import time
+import string
 
 client = MongoClient("mongodb+srv://notpointbreak:Password246M@cluster0.gzxc2sc.mongodb.net/?retryWrites=true&w=majority")
 db = client.get_database('bifrost')
@@ -35,6 +37,8 @@ links = db.gdtot
 client = MongoClient("mongodb+srv://yellowflash:Password246M%3F@cluster0.nzv7x2e.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client.get_database('bifrost')
 tokens_collection = db.token
+users = db.users
+settings = db.settings
 
 client = MongoClient("mongodb+srv://yellowflash:Password246M%3F@cluster0.nzv7x2e.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client.get_database('bifrost')
@@ -111,12 +115,36 @@ img_link = ['https://i.pinimg.com/originals/2b/38/1e/2b381e29d6c14418cf104d07803
 
 
  
-def gplink(link):
-  # html = requests.get(f"https://gplinks.in/api?api=14babc9511f3680505742438efe33ba2c7026c43&url={link}")
-  html = requests.get(f"https://publicearn.com/api?api=a1bb968c95a6bbe5b9ad636986ad36dc5276bbdb&url={link}")
-  link = json.loads(html.text)['shortenedUrl']
-  html = requests.get(link)
-  return html.url
+def update_user_stats(user_id):
+    return users.update_one(
+        {'user_id': user_id},
+        {'$set': {'last_login': datetime.datetime.now()}, '$inc': {'login_count': 1}},
+        upsert=True
+    )
+    
+def get_all_users():
+    return users.find({})
+  
+def toggle_shortener():
+    """Toggle link shortener status"""
+    current_status = settings.find_one({'setting': 'shortener'})
+    new_status = not current_status.get('enabled', True)
+    
+    settings.update_one(
+        {'setting': 'shortener'},
+        {'$set': {'enabled': new_status}},
+        upsert=True
+    )
+    
+    return f"✅ Link shortener has been {'enabled' if new_status else 'disabled'}"
+
+def get_stats():
+    return {
+        'total_users': users.count_documents({}),
+        'active_users': tokens_collection.count_documents({'valid':True})
+    }
+user_search_results = {}  # Format: {user_id: {'results': [...], 'timestamp': datetime}}
+
 
 def appdrive(link,id,message):
   data = []
@@ -164,13 +192,13 @@ def appdrive(link,id,message):
     try:
       html = requests.get(f"https://www.imdb.com/find/?q={new_title.replace('Copy of ','')}&ref_=nv_sr_sm",headers=headers)
       soup1 = BeautifulSoup(html.text,'lxml')
-      print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+      print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
       bot.reply_to(message, text=f"Added {url1} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
     except:
       try:
         html = requests.get(f"https://www.imdb.com/find/?q={new_title.split(' ')[0]}&ref_=nv_sr_sm",headers=headers)
         soup1 = BeautifulSoup(html.text,'lxml')
-        print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+        print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
         bot.reply_to(message, text=f"Added {url1} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
       except:
         print(f"{id} : {url} : {new_title} : Nil")
@@ -179,7 +207,7 @@ def appdrive(link,id,message):
       new_one = {
       "id":f"{id}",
       "title":f"{title}",
-      "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}",
+      "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}",
       "link":f"{url}",
       "size": f"{size}",
       "indexTitle":f"{new_title}"
@@ -196,41 +224,137 @@ def appdrive(link,id,message):
     links.insert_one(new_one)
     id+=1
 
+@bot.message_handler(commands=['stats'])
+def show_stats(message):
+    if not message.from_user.id == 385686409:
+        bot.reply_to(message, "You don't have permission to use this command! ⛔")
+        return
+    try:
+        # Get total count from MongoDB
+        total_files = links.count_documents({})
+        stats = get_stats()
+        current_status = settings.find_one({'setting': 'shortener'})
+        status = current_status.get('enabled', True)
+        stats_text = f"""
+            📊 <b>Bot Statistics</b> 📊
+            ━━━━━━━━━━━━━━━━━━━━━
+            📁 <b>Shortner Status:</b> <code>{status}</code>
+            📁 <b>Total Files:</b> <code>{total_files}</code>
+            👥 <b>Total Users:</b> <code>{stats['total_users']}</code>
+            🔗 <b>Active Users:</b> <code>{stats['active_users']}</code>
+            📅 <b>Last Updated:</b> <code>{time.strftime('%Y-%m-%d %H:%M:%S')} UTC</code>
 
+            <i>🤖 Database is updated regularly!</i>
+            ━━━━━━━━━━━━━━━━━━━━━
+            """
+        bot.reply_to(message, stats_text, parse_mode='html')
+            
+    except Exception as e:
+        error_text = """
+                    ❌ <b>Error Fetching Stats</b>
+                    ━━━━━━━━━━━━━━━━━━━━━
+                    Unable to fetch database statistics.
+                    Please try again later.
+                    """
+        print(f"Stats Error: {e}")
+        bot.reply_to(message, error_text, parse_mode='html')
+        
+@bot.message_handler(commands=['shortner'])
+def handle_broadcast( message):
+    if not message.from_user.id == 385686409:
+        bot.reply_to(message, "You don't have permission to use this command! ⛔")
+        return
+    
+    try:
+      status = toggle_shortener()
+      bot.reply_to(message, status)
+    except Exception as e:
+        bot.reply_to(message, f"Broadcast failed: {str(e)}")
+        
+@bot.message_handler(commands=['broadcast'])
+def handle_broadcast( message):
+    if not message.from_user.id == 385686409:
+        bot.reply_to(message, "You don't have permission to use this command! ⛔")
+        return
+
+    try:
+        try:
+            image = message.reply_to_message.photo[-1].file_id  # Get the highest quality image
+            caption = message.reply_to_message.caption.replace('.',"\.").replace("/","\/").replace("=","\=")
+            caption = "||"+caption+"||"
+        except Exception as e:
+            broadcast_message = " ".join(message.text.split()[1:])
+
+        users = get_all_users()
+        success_count = 0
+        fail_count = 0
+
+        for user in users:
+            try:
+                try:
+                    msg = bot.send_photo(user['user_id'],photo=image, caption=caption,parse_mode="MarkdownV2")
+                    print(msg)
+                except Exception as e:
+                    print(e)
+                    bot.send_message(user['user_id'], broadcast_message)
+                success_count += 1
+            except:
+                fail_count += 1
+
+        bot.reply_to(
+            message,
+            f"Broadcast completed!\n"
+            f"✅ Success: {success_count}\n"
+            f"❌ Failed: {fail_count}"
+        )
+    except Exception as e:
+        bot.reply_to(message, f"Broadcast failed: {str(e)}")
+        
 @bot.message_handler(commands=['start']) 
 def start(message):
     bplink = 'none'
     code = extract_arg(message.text)
     CHAT_ID = -1002161455712
     USER_ID = message.from_user.id
- 
+    update_user_stats(USER_ID)
     if code == []:
         bot.send_message(-1001975502922, text=f"#{message.chat.id}\n\nUsername : [{message.from_user.full_name}](tg://user?id={message.from_user.id})\n\nStarted for fun", parse_mode='markdown', disable_web_page_preview=True)
         button = telebot.types.InlineKeyboardButton(text="⚡ Power House ", url=f"http://t.me/GdtotLinkz")
         keyboard = telebot.types.InlineKeyboardMarkup().add(button)
         bot.send_photo(chat_id=message.chat.id, photo=f"{random.choice(img_link)}", caption=f"Hey 👋🏻 `{str(message.chat.first_name)}`,\n\nThis 🤖 Bot is the Exclusive property of [Ye1lowFlash](https://t.me/Ye1lowFlash).\nIts a *Movie Search bot* , You'll get Movie as a google drive link\nTry searching `avengers` .\n\n*⚡️powered by* @GdtotLinkz", parse_mode="markdown", reply_markup=keyboard) 
     else:
-        if not check_subscription(bot,CHAT_ID, USER_ID):
-            button = telebot.types.InlineKeyboardButton(text="Join Channel 🔗", url=f"https://t.me/+V31K8RPlAmEzMDRl")
-            button1 = telebot.types.InlineKeyboardButton(text="Try again 🔄 ", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
-            keyboard = telebot.types.InlineKeyboardMarkup().add(button).add(button1)
-            message_id1 = bot.send_message(chat_id=message.chat.id, text=f"Please *Join* My Status Channel and Try again to Get Link!", parse_mode='markdown', disable_web_page_preview=True, reply_markup=keyboard).message_id
+        if False:
+            pass
         else:
           if "Yellow" not in code[0]:
-              validate_short_token(message,code[0])
-              myquery = { "token": code[0] }
-              newvalues = { "$set": { "valid": True } }
-              tokens_collection.update_one(myquery, newvalues)
-              bot.send_message(-1001975502922, text=f"#{message.chat.id}\n\nUsername : [{message.from_user.full_name}](tg://user?id={message.from_user.id})\n\nGot verified ✅", parse_mode='markdown', disable_web_page_preview=True)
+              if validate_short_token(message,code[0]):
+                myquery = { "token": code[0] }
+                newvalues = { "$set": { "valid": True } }
+                tokens_collection.update_one(myquery, newvalues)
+                user = message.from_user if message.from_user else None
+                username = f"@{user.username}" if user.username else "No Username"
+                user_mention = f"[{user.full_name}](tg://user?id={user.id})"
+                bot.send_message(
+                    -1001975502922,
+                    text=(
+                        f"🎉 **Verification Successful!** ✅\n\n"
+                        f"👤 **User**: {user_mention if user_mention else None}"
+                        f"🆔 **Chat ID**: `#{message.chat.id}`\n\n"
+                        f"✨ Thank you for verifying. Welcome aboard!"
+                    ),
+                    parse_mode='markdown',
+                    disable_web_page_preview=True
+                )
           else:
-            bot.send_message(-1001975502922, text=f"#{message.chat.id}\n\nUsername : [{message.from_user.full_name}](tg://user?id={message.from_user.id})\n\nGot Link for `{code[0]}`", parse_mode='markdown', disable_web_page_preview=True)
-            print('movie thing')
             token_data = tokens_collection.find_one({'user_id': message.from_user.id})
             if token_data:
-              if token_data['expires_at'] > datetime.datetime.utcnow() and token_data['valid'] == True:
+              print(token_data['expires_at'] > datetime.datetime.now())
+              if token_data['expires_at'] > datetime.datetime.now() and token_data['valid'] == True:
+                print("valid")
                 try:
                     bot.delete_message(message.chat.id, message_id=message_id1)
-                except:
+                except Exception as e:
+                    print(e)
                     pass
                 message_ids = bot.reply_to(message, text=f"𝐆𝐞𝐧𝐞𝐫𝐚𝐭𝐢𝐧𝐠 𝐋𝐢𝐧𝐤 🔄", parse_mode='markdown', disable_web_page_preview=True).message_id
                 url = decrypt(code[0])
@@ -240,13 +364,13 @@ def start(message):
                 link = data[0]['link']
                 title = data[0]['title']
                 if 'gdtot' in link:
-                    link = link.replace('new6.gdtot.cfd', 'new3.gdtot.dad')
+                    link = link.replace('new6.gdtot.cfd', 'new10.gdtot.dad')
                 elif 'filepress' in link:
-                    link = link.replace('https://filepress.click', 'new14.filepress.store')
+                    link = link.replace('https://filepress.click', 'new1.filepress.life')
                 elif 'appdrive' in link:
-                    link = link.replace('.pro', '.dev')
+                    link = link.replace('.pro', '.fir')
                 elif 'gdflix' in link:
-                    link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new1.gdflix.cfd/file/',link)
+                    link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new6.gdflix.cfd/file/',link)
                 elif 'gofile' in link:
                     link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/d\/','https://gofile.io/d/',link)
                 print(link)
@@ -258,17 +382,17 @@ def start(message):
                     text = f"🎥\t*{title}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {link}\n\n*⚡powered by* @GdtotLinkz"
                 else:
                   text = f"🎥\t*{title}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {link}\n\n*⚡powered by* @GdtotLinkz"
-                # text = f"🎥\t*{data[0]['title']}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {gplink}\n\n*⚡powered by* @GdtotLinkz"
                 bot.delete_message(chat_id=message.chat.id, message_id=message_ids)
-                button1 = telebot.types.InlineKeyboardButton(text=f"Fast Dowload 🚀", url='https://publicearn.com/DDLHVN')
+                button1 = telebot.types.InlineKeyboardButton(text=f"Fast Dowload 🚀", url='https://modijiurl.com/DDLHVN')
                 keyboard = telebot.types.InlineKeyboardMarkup().add(button1)
                 message_ids = bot.reply_to(message, text=text, parse_mode='markdown', disable_web_page_preview=True,reply_markup=keyboard)
+                print(f"[STATUS] :{message.chat.id} got link {title}")
               else:
                 tokens_collection.delete_many({'user_id': message.from_user.id})
                 button1 = telebot.types.InlineKeyboardButton(text=f"verify ✅ ", url=f"{generate_adlink(message)}")
                 button2 = telebot.types.InlineKeyboardButton(text=f"Retry 🔄", url=f"https://t.me/DriveMovie_bot?start={code[0]}")
                 keyboard = telebot.types.InlineKeyboardMarkup().add(button1).add(button2)
-                bot.reply_to(message, text=f"<code>Your token is expired,you need to verify before continuing !🤌</code> \n\n <b>click verify and then retry</b>", parse_mode="html", disable_web_page_preview=True,reply_markup=keyboard)
+                message_id1 = bot.reply_to(message, text=f"<code>Your token is expired,you need to verify before continuing !🤌</code> \n\n <b>click verify and then retry</b>", parse_mode="html", disable_web_page_preview=True,reply_markup=keyboard).message_id
             else:
               tokens_collection.delete_many({'user_id': message.from_user.id})
               button1 = telebot.types.InlineKeyboardButton(text=f"verify ✅ ", url=f"{generate_adlink(message)}")
@@ -375,19 +499,19 @@ def handle_all_messages(message):
               try:
                 html = requests.get(f"https://www.imdb.com/find/?q={new_title.replace('Copy of ','')}&ref_=nv_sr_sm",headers=headers)
                 soup1 = BeautifulSoup(html.text,'lxml')
-                print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
               except:
                 try:
                   html = requests.get(f"https://www.imdb.com/find/?q={new_title.split(' ')[0]}&ref_=nv_sr_sm",headers=headers)
                   soup1 = BeautifulSoup(html.text,'lxml')
-                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                 except:
                   print(f"{id} : {url} : {new_title} : Nil")
               try:
                 new_one = {
                 "id":f"{id}",
                 "title":f"{title}",
-                "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}",
+                "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}",
                 "link":f"{url}",
                 "size": f"{size}",
                 "indexTitle":f"{new_title}"
@@ -441,13 +565,13 @@ def handle_all_messages(message):
                   try:
                     html = requests.get(f"https://www.imdb.com/find/?q={new_title.replace('Copy of ','')}&ref_=nv_sr_sm",headers=headers)
                     soup1 = BeautifulSoup(html.text,'lxml')
-                    print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                    print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                     bot.reply_to(message, text=f"Added {url1} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
                   except:
                     try:
                       html = requests.get(f"https://www.imdb.com/find/?q={new_title.split(' ')[0]}&ref_=nv_sr_sm",headers=headers)
                       soup1 = BeautifulSoup(html.text,'lxml')
-                      print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                      print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                       bot.reply_to(message, text=f"Added {url1} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
                     except:
                       print(f"{id} : {url} : {new_title} : Nil")
@@ -456,7 +580,7 @@ def handle_all_messages(message):
                     new_one = {
                     "id":f"{id}",
                     "title":f"{title}",
-                    "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}",
+                    "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}",
                     "link":f"{url}",
                     "size": f"{size}",
                     "indexTitle":f"{new_title}"
@@ -525,13 +649,13 @@ def handle_all_messages(message):
                 try:
                   html = requests.get(f"https://www.imdb.com/find/?q={new_title.replace('Copy of ','')}&ref_=nv_sr_sm",headers=headers)
                   soup1 = BeautifulSoup(html.text,'lxml')
-                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                   bot.reply_to(message, text=f"Added {url} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
                 except:
                   try:
                     html = requests.get(f"https://www.imdb.com/find/?q={new_title.split(' ')[0]}&ref_=nv_sr_sm",headers=headers)
                     soup1 = BeautifulSoup(html.text,'lxml')
-                    print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                    print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                     bot.reply_to(message, text=f"Added {url} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
                   except:
                     print(f"{id} : {url} : {new_title} : Nil")
@@ -540,7 +664,7 @@ def handle_all_messages(message):
                   new_one = {
                   "id":f"{id}",
                   "title":f"{new_tit}",
-                  "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}",
+                  "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}",
                   "link":f"{url}",
                   "size": f"{size}",
                   "indexTitle":f"{new_title}"
@@ -655,13 +779,13 @@ def handle_all_messages(message):
               try:
                 html = requests.get(f"https://www.imdb.com/find/?q={new_title.replace('Copy of ','')}&ref_=nv_sr_sm",headers=headers)
                 soup1 = BeautifulSoup(html.text,'lxml')
-                print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                 bot.reply_to(message, text=f"Added {url1} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
               except:
                 try:
                   html = requests.get(f"https://www.imdb.com/find/?q={new_title.split(' ')[0]}&ref_=nv_sr_sm",headers=headers)
                   soup1 = BeautifulSoup(html.text,'lxml')
-                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                   bot.reply_to(message, text=f"Added {url1} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
                 except:
                   print(f"{id} : {url} : {new_title} : Nil")
@@ -670,7 +794,7 @@ def handle_all_messages(message):
                 new_one = {
                 "id":f"{id}",
                 "title":f"{title}",
-                "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}",
+                "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}",
                 "link":f"{url}",
                 "size": f"{size}",
                 "indexTitle":f"{new_title}"
@@ -732,13 +856,13 @@ def handle_all_messages(message):
                 try:
                   html = requests.get(f"https://www.imdb.com/find/?q={new_title.replace('Copy of ','')}&ref_=nv_sr_sm",headers=headers)
                   soup1 = BeautifulSoup(html.text,'lxml')
-                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                   bot.reply_to(message, text=f"Added {url1} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
                 except:
                   try:
                     html = requests.get(f"https://www.imdb.com/find/?q={new_title.split(' ')[0]}&ref_=nv_sr_sm",headers=headers)
                     soup1 = BeautifulSoup(html.text,'lxml')
-                    print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                    print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                     bot.reply_to(message, text=f"Added {url1} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
                   except:
                     print(f"{id} : {url} : {new_title} : Nil")
@@ -747,7 +871,7 @@ def handle_all_messages(message):
                   new_one = {
                   "id":f"{id}",
                   "title":f"{title}",
-                  "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}",
+                  "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}",
                   "link":f"{url}",
                   "size": f"{size}",
                   "indexTitle":f"{new_title}"
@@ -821,13 +945,13 @@ def handle_all_messages(message):
                 try:
                   html = requests.get(f"https://www.imdb.com/find/?q={new_title.replace('Copy of ','')}&ref_=nv_sr_sm",headers=headers)
                   soup1 = BeautifulSoup(html.text,'lxml')
-                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                  print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                   bot.reply_to(message, text=f"Added {url} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
                 except:
                   try:
                     html = requests.get(f"https://www.imdb.com/find/?q={new_title.split(' ')[0]}&ref_=nv_sr_sm",headers=headers)
                     soup1 = BeautifulSoup(html.text,'lxml')
-                    print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}")
+                    print(f"{id} : {url} : {new_title} : {soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}")
                     bot.reply_to(message, text=f"Added {url} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
                   except:
                     print(f"{id} : {url} : {new_title} : Nil")
@@ -836,7 +960,7 @@ def handle_all_messages(message):
                   new_one = {
                   "id":f"{id}",
                   "title":f"{title}",
-                  "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-17]}",
+                  "imdbId":f"{soup1.find('a',{'class':'ipc-metadata-list-summary-item__t'})['href'][7:-19]}",
                   "link":f"{url}",
                   "size": f"{size}",
                   "indexTitle":f"{new_title}"
@@ -855,26 +979,19 @@ def handle_all_messages(message):
               except Exception as e:
                 print(e)
                 pass
-            elif 'drive.google' in i:
-             urlss = re.findall(r'https:\/\/[a-zA-Z.\/0-9\?\-_=]+',movie)
-             try:
-                message_id1 = bot.send_message(chat_id=message.chat.id, text=f"<b>Cloning</b> : <code>{urlss[0]}</code>...", parse_mode='html', disable_web_page_preview=True).message_id
-                print(f"Cloning {movie}")
-                gdrive = clone.clonev1(movie)
-                title = clone.details(movie)
-                bot.delete_message(message.chat.id, message_id=message_id1)
-                msg = f"<b>🎥 Title</b> : <code>{title}</code>\n\n<b>🌎 Index Link </b>: {gplink(gdrive)}\n\n"
-                bot.reply_to(message, text=f"{msg}", parse_mode="html", disable_web_page_preview=True)
-             except Exception as e:
-              print(e)
-              # dispose()
           except Exception as e:
             print(e)
             print(f"{i}")
 
     else:
         text = "No Links found !"
-        message_ids = bot.reply_to(message, text=f"Searching ....", parse_mode='html', disable_web_page_preview=True).message_id
+        print(f"[STATUS] : {message.chat.id} started searching {searching_text}")
+        searching_text = (
+            "🔍 *Searching Database*\n\n"
+            "Please wait while I find the best matches..."
+        )
+        message_ids = bot.reply_to(message, text=searching_text, parse_mode="markdown").message_id
+        send_status_message(message, 'link', message.text)
         result = links.aggregate([
             {
                 "$search": {
@@ -896,15 +1013,18 @@ def handle_all_messages(message):
             }
         ])
         id = 1
-        global all_links
-        all_links = []
         data = []
+        user_id = message.from_user.id
+        user_search_results[user_id] = {
+            'results': [],  # Store the search results here
+            'timestamp': datetime.datetime.now()  # Add timestamp when results are stored
+        }
         li = list(result)
         for i in list(li):
             if i['score'] > 3:
                 if id >= 5:
                     data.append("<b>⚡️powered by @GdtotLinkz</b>")
-                    all_links.append(data)
+                    user_search_results[user_id]['results'].append(data)
                     data = []
                     id = 1
                 else:
@@ -931,45 +1051,98 @@ def handle_all_messages(message):
                             print({i['link']})
                         except:
                             pass
-        if len(data) <= 4:
-            if len(data) != 0:
-                data.append("<b>⚡️powered by @GdtotLinkz</b>")
-                all_links.append(data)
-
         if text == "No Links found !":
             bot.delete_message(chat_id=message.chat.id, message_id=message_ids)
-            bot.reply_to(message, text=text, parse_mode="html", disable_web_page_preview=True)
+            no_results_text = (
+                "❌ *No Results Found*\n\n"
+                "Try searching with:\n"
+                "• Different spelling\n"
+                "• Fewer words\n"
+                "• More general terms"
+            )
+            bot.reply_to(message, text=no_results_text, parse_mode="markdown", disable_web_page_preview=True)
         else:
-            text = make_text(all_links, 0)
+            # ... process results ...
+            
             bot.delete_message(chat_id=message.chat.id, message_id=message_ids)
-            message_ids = bot.reply_to(message, text=make_text(all_links, 0), parse_mode="html", disable_web_page_preview=True, reply_markup=makeKeyboard(1, 1)).message_id
+            bot.reply_to(
+                message, 
+                text=make_text(user_search_results[user_id], 0),
+                parse_mode="html",
+                disable_web_page_preview=True,
+                reply_markup=makeKeyboard(1, 1, user_id)
+            )
 
-def make_text(all_links, i=0):
-    text = ''
-    for i in all_links[i]:
-        for j in i:
-            text += j
+def send_status_message(message, action_type, extra_info=None):
+    """
+    Send status message to channel
+    action_type: 'link' or 'verify'
+    extra_info: additional details like movie code
+    """
+    user = message.from_user
+    username = f"@{user.username}" if user.username else "No Username"
+    user_mention = f"[{user.full_name}](tg://user?id={user.id})"
+    
+    if action_type == 'link':
+        status_text = f"""
+                    #id{message.chat.id}
+                    👤 User: {user_mention if user_mention else None}
+                    📝 Name: `{user.full_name if user.full_name else None}`
+                    🔗 Username: `{username if username else None}`
+                    📱 User ID: `{user.id}`
+
+                    🎬 Got Link for: `{extra_info}`
+                    ⏰ Time: `{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}`
+                    """
+    else:  # verify
+        status_text = f"""
+                    #id{message.chat.id}
+                    👤 User: {user_mention if user_mention else None}
+                    📝 Name: `{user.full_name if user.full_name else None}`
+                    🔗 Username: `{username if username else None}`
+                    📱 User ID: `{user.id}`
+
+                    ✅ User Verified Successfully
+                    ⏰ Time: `{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}`
+                    """
+
+    try:
+        bot.send_message(
+            chat_id=-1001975502922,
+            text=status_text,
+            parse_mode='markdown',
+            disable_web_page_preview=True
+        )
+    except Exception as e:
+        print(f"Error sending status message: {e}")
+
+      
+def make_text(user_data, i=0):
+    text = '<b>🎬 SEARCH RESULTS 🎬</b>\n' + '─'*30 + '\n\n'
+    
+    for item in user_data['results'][i]:
+        if "⚡️powered by" in item:
+            text += '\n' + '─'*30 + '\n'
+            text += f"📱 <b>Page {i+1}</b> • {item}\n"
+            text += '╰─⭒☆⭒─╯\n'
+        else:
+            # Parse the existing item to extract title, size and link
+            title = item.split('Title</b> : <code>')[1].split('</code>')[0]
+            size = title.split('[')[-1].strip('[]')
+            clean_title = title.split('[')[0].strip()
+            link = item.split('href=\'')[1].split('\'>')[0]
+            
+            # Rebuild the message with HTML formatting
+            text += f"🎥 <b>{clean_title}</b>\n"
+            text += f"💾 Size: <code>{size}</code>\n"
+            text += f"🔗 <a href='{link}'>Download</a>\n"
+            text += '┈' * 15 + '\n\n'
+    
     return text
 
 def extract_arg(arg):
     return arg.split()[1:]
  
-     
-def check_subscription(bot, chat_id,user_id):
-    try:
-        member = bot.get_chat_member(chat_id, user_id)
-        join_requests = bot.get_chat_join_requests(chat_id=chat_id)
-        if member.status in ['member', 'administrator', 'creator', 'restricted']:
-            return True
-        else:
-            for request in join_requests.requests:
-                if request.user.id == user_id:
-                    print(f"user already in fsub channel")
-                    return True
-        return False
-    except:
-        pass
-
 
 def decrypt(link):
     link0 = link.replace('WVsbG93Rmxhc2g','')[9::]
@@ -1001,35 +1174,94 @@ def encrypt(link):
     newLink2 = f"{newLink}WVsbG93Rmxhc2g"
     return newLink2
 
-def makeKeyboard(id1=0, id2=0):
-    button1 = telebot.types.InlineKeyboardButton(text=f"Next", callback_data=f"next{id1}")
-    button2 = telebot.types.InlineKeyboardButton(text=f"Previous", callback_data=f"prev{id2}")
-    keyboard = telebot.types.InlineKeyboardMarkup().add(button1).add(button2)
+def makeKeyboard(id1=0, id2=0, user_id=None):
+    button1 = telebot.types.InlineKeyboardButton(text="⏩ Next Page", callback_data=f"next_{user_id}_{id1}")
+    button2 = telebot.types.InlineKeyboardButton(text="⏪ Previous Page", callback_data=f"prev_{user_id}_{id2}")
+    button3 = telebot.types.InlineKeyboardButton(text="🏠 Join Channel", url="https://t.me/GdtotLinkz")
+    keyboard = telebot.types.InlineKeyboardMarkup()
+    keyboard.row(button2, button1)
+    keyboard.row(button3)
     return keyboard
 
-@bot.callback_query_handler(func=lambda message: True)
+@bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    for key, value in enumerate(all_links):
-        if call.data == f"next{key}":
-            bot.edit_message_text(text=f"{make_text(all_links, key)}",
-                                  chat_id=call.message.chat.id,
-                                  message_id=call.message.id,
-                                  parse_mode="html", disable_web_page_preview=True,
-                                  reply_markup=makeKeyboard(key + 1, key))
-        elif call.data == f"prev{key}":
-            bot.edit_message_text(text=f"{make_text(all_links, int(key) - 1)}",
-                                  chat_id=call.message.chat.id,
-                                  message_id=call.message.id,
-                                  parse_mode="html", disable_web_page_preview=True,
-                                  reply_markup=makeKeyboard(key, int(key) - 1))
-        else:
-            pass
+    # Extract user_id and page from callback data
+    action, user_id, page = call.data.split('_')
+    user_id = int(user_id)
+    page = int(page)
+    
+    if user_id not in user_search_results:
+        expired_text = (
+            "⏰ *Search Expired*\n\n"
+            "Your search results have expired for security.\n"
+            "Please search again to get fresh results!"
+        )
+        bot.answer_callback_query(call.id, text=expired_text)
+        return
+
+    # Update loading states
+    if action == "next":
+        bot.answer_callback_query(call.id, text="📥 Loading next page...")
+    elif action == "prev":
+        bot.answer_callback_query(call.id, text="📥 Loading previous page...")
+
+    # Update timestamp when user interacts with results
+    user_search_results[user_id]['timestamp'] = datetime.datetime.now()
+    try:
+        if action == "next":
+            if page < len(user_search_results[user_id]['results']):
+                bot.edit_message_text(
+                    text=make_text(user_search_results[user_id], page),
+                    chat_id=call.message.chat.id,
+                    message_id=call.message.id,
+                    parse_mode="html",  # Changed from "markdown" to "html"
+                    disable_web_page_preview=True,
+                    reply_markup=makeKeyboard(page + 1, page, user_id))
+        elif action == "prev":
+            if page > 0:
+                bot.edit_message_text(
+                    text=make_text(user_search_results[user_id], page - 1),
+                    chat_id=call.message.chat.id,
+                    message_id=call.message.id,
+                    parse_mode="html",  # Changed from "markdown" to "html"
+                    disable_web_page_preview=True,
+                    reply_markup=makeKeyboard(page, page - 1, user_id)
+                )
+    except Exception as e:
+        print(e)
+        pass
+            
+def cleanup_old_results():
+    """Remove search results older than 30 minutes"""
+    while True:
+        current_time = datetime.datetime.now()
+        # Create a list of users to remove to avoid modifying dict during iteration
+        users_to_remove = []
+        
+        for user_id, data in user_search_results.items():
+            # Check if results are older than 30 minutes
+            if current_time - data['timestamp'] > datetime.timedelta(minutes=30):
+                users_to_remove.append(user_id)
+        
+        # Remove old results
+        for user_id in users_to_remove:
+            del user_search_results[user_id]
+            
+        # Sleep for 5 minutes before next cleanup
+        print(f"[STATUS] : Clean up")
+        time.sleep(300)
+
+# Start cleanup thread when bot starts
+cleanup_thread = threading.Thread(target=cleanup_old_results, daemon=True)
+cleanup_thread.start()
           
 def validate_short_token(message,token):
     token_data = tokens_collection.find_one({'user_id': message.from_user.id})
     if token_data:
-        if token_data['expires_at'] > datetime.datetime.utcnow():
+        if token_data['expires_at'] > datetime.datetime.now():
             bot.reply_to(message, text=f"<b>Token is valid , you can get unlimited Movie/show links for 2 hour 😇</b>", parse_mode="html", disable_web_page_preview=True)
+            print(f"[STATUS] : {message.chat.id} Verified ")
+            send_status_message(message, 'verify')
             return True
         else:
             tokens_collection.delete_many({'user_id': message.from_user.id})
@@ -1044,17 +1276,22 @@ def validate_short_token(message,token):
     return False
           
 def generate_adlink(message):
-  html = requests.get(f"https://modijiurl.com/api?api=38a81844c96d9984e51ef0111477ecd81213f3db&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
-  # html = requests.get(f"https://instantearn.in/api?api=ea5f98c8b2dd2ae839a35fb9f703826878ff36d7&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
-  # html = requests.get(f"https://gplinks.in/api?api=14babc9511f3680505742438efe33ba2c7026c43&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
-  # html = requests.get(f"https://publicearn.com/api?api=a1bb968c95a6bbe5b9ad636986ad36dc5276bbdb&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
-  linker = json.loads(html.text)['shortenedUrl']
-  html = requests.get(linker)
-  return html.url
+    current_status = settings.find_one({'setting': 'shortener'})
+    status = current_status.get('enabled', True)
+    if status:
+        html = requests.get(f"https://modijiurl.com/api?api=38a81844c96d9984e51ef0111477ecd81213f3db&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
+    # html = requests.get(f"https://instantearn.in/api?api=ea5f98c8b2dd2ae839a35fb9f703826878ff36d7&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
+    # html = requests.get(f"https://gplinks.in/api?api=14babc9511f3680505742438efe33ba2c7026c43&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
+    # html = requests.get(f"https://publicearn.com/api?api=a1bb968c95a6bbe5b9ad636986ad36dc5276bbdb&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
+        linker = json.loads(html.text)['shortenedUrl']
+        html = requests.get(linker)
+        return html.url
+    else:
+        return f"https://t.me/DriveMovie_bot?start={generate_short_token(message)}"
 
 def generate_short_token(message,length=6):
     token = ''.join(random.choices(string.ascii_letters + string.digits, k=length))
-    expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+    expiration_time = datetime.datetime.now() + datetime.timedelta(hours=2)
     token_data = {
         'token': token,
         'expires_at': expiration_time,
@@ -1064,7 +1301,7 @@ def generate_short_token(message,length=6):
     tokens_collection.insert_one(token_data)
     return token
   
-# Add this new function to handle web requests
+Add this new function to handle web requests
 async def handle_webhook(request):
     return web.Response(text="Bot is running")
 
@@ -1085,6 +1322,7 @@ async def main():
     while True:
         try:
             # Use non-async polling since telebot doesn't support async polling
+            print(f"[STATUS] : Bot started")
             bot.polling(timeout=10, long_polling_timeout=5)
         except Exception as e:
             print(f"Bot polling error: {e}")
@@ -1092,3 +1330,5 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
+
+print(f"[STATUS] : Bot stopped")
