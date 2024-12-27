@@ -729,7 +729,7 @@ def handle_all_messages(message):
                 post_body = {
                   "cmd": "request.get",
                   "url":f"{url1}",
-                  "maxTimeout": 60000
+                  "maxTimeout": 120000
                 }
                 response = requests.post('https://flaresolverrmine.onrender.com/v1', headers={'Content-Type': 'application/json'}, json=post_body)
                 try:
@@ -744,7 +744,7 @@ def handle_all_messages(message):
                   post_body = {
                   "cmd": "request.get",
                   "url":f"{url1.replace('file','zfile')}",
-                  "maxTimeout": 60000
+                  "maxTimeout": 120
                   }
                   response = requests.post('https://flaresolverrmine.onrender.com/v1', headers={'Content-Type': 'application/json'}, json=post_body)
                   fsdata = json.loads(response.text)
