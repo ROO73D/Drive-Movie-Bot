@@ -1301,7 +1301,7 @@ def generate_short_token(message,length=6):
     tokens_collection.insert_one(token_data)
     return token
   
-Add this new function to handle web requests
+
 async def handle_webhook(request):
     return web.Response(text="Bot is running")
 
