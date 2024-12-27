@@ -985,7 +985,7 @@ def handle_all_messages(message):
 
     else:
         text = "No Links found !"
-        print(f"[STATUS] : {message.chat.id} started searching {searching_text}")
+        print(f"[STATUS] : {message.chat.id} started searching {message.text}")
         searching_text = (
             "🔍 *Searching Database*\n\n"
             "Please wait while I find the best matches..."
