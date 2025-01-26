@@ -464,7 +464,7 @@ def handle_all_messages(message):
                     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 }
               url = re.sub(r'https:\/\/[a-zA-Z0-9._]+\/drive\/', 'https://hubcloud.day/drive/', i.strip())
-              url1 = re.sub(r'https:\/\/[a-zA-Z0-9._]+\/drive\/', 'https://hubcloud.day/drive/', o\i.strip())
+              url1 = re.sub(r'https:\/\/[a-zA-Z0-9._]+\/drive\/', 'https://hubcloud.day/drive/', i.strip())
               response = requests.get(url1, headers=headers)
               print(response.status_code)
               soup = BeautifulSoup(response.text, 'html.parser')
