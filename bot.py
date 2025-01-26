@@ -425,7 +425,7 @@ def handle_all_messages(message):
     if movie == None:
       movie = message.text
     if 'http' in movie:
-      urls = re.findall('https:\/\/[a-zA-Z1-90\.]+\/?[a-zA-Z1-90\.]+\/?[a-zA-Z1-90]+', movie)
+      urls = re.findall(r'https:\/\/[a-zA-Z0-9._]+\/?[a-zA-Z0-9._]+\/?[a-zA-Z0-9._]+', movie)
       id=1
       for i in urls:
         link = i.strip()
