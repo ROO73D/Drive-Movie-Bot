@@ -1279,10 +1279,10 @@ def generate_adlink(message):
     current_status = settings.find_one({'setting': 'shortener'})
     status = current_status.get('enabled', True)
     if status:
-        html = requests.get(f"https://modijiurl.com/api?api=38a81844c96d9984e51ef0111477ecd81213f3db&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
+        # html = requests.get(f"https://modijiurl.com/api?api=38a81844c96d9984e51ef0111477ecd81213f3db&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
     # html = requests.get(f"https://instantearn.in/api?api=ea5f98c8b2dd2ae839a35fb9f703826878ff36d7&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
     # html = requests.get(f"https://gplinks.in/api?api=14babc9511f3680505742438efe33ba2c7026c43&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
-    # html = requests.get(f"https://publicearn.com/api?api=a1bb968c95a6bbe5b9ad636986ad36dc5276bbdb&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
+        html = requests.get(f"https://publicearn.com/api?api=a1bb968c95a6bbe5b9ad636986ad36dc5276bbdb&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
         linker = json.loads(html.text)['shortenedUrl']
         html = requests.get(linker)
         return html.url
