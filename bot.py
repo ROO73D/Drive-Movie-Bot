@@ -40,7 +40,7 @@ tokens_collection = db.token
 users = db.users
 settings = db.settings
 
-client = MongoClient("mongodb+srv://yellowflash:Password246M%3F@cluster0.nzv7x2e.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient("mongodb+srv://yellowflash:Password246M@cluster0.nzv7x2e.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client.get_database('bifrost')
 ddlinks = db.bbg
 
