@@ -44,7 +44,7 @@ client = MongoClient("mongodb+srv://yellowflash:Password246M%3F@cluster0.nzv7x2e
 db = client.get_database('bifrost')
 ddlinks = db.bbg
 
-TOKEN = '6530908059:AAHfS4RdG-uvg8ry_9WWZOVxOUO70QrXWT8'
+TOKEN = '6530908059:AAHl-xtTA9t1HBatFQWen8qvSsHdnJMTCck'
 
 bot = telebot.TeleBot(TOKEN)
 
