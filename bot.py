@@ -364,13 +364,13 @@ def start(message):
                 link = data[0]['link']
                 title = data[0]['title']
                 if 'gdtot' in link:
-                    link = link.replace('new6.gdtot.cfd', 'new10.gdtot.dad')
+                    link = link.replace('new6.gdtot.cfd', 'new19.gdtot.dad')
                 elif 'filepress' in link:
-                    link = link.replace('https://filepress.click', 'new1.filepress.life')
+                    link = link.replace('https://filepress.click', 'new3.filepress.live')
                 elif 'appdrive' in link:
-                    link = link.replace('.pro', '.fir')
+                    link = link.replace('.pro', '.fit')
                 elif 'gdflix' in link:
-                    link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new6.gdflix.cfd/file/',link)
+                    link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new8.gdflix.dad/file/',link)
                 elif 'gofile' in link:
                     link = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/d\/','https://gofile.io/d/',link)
                 print(link)
