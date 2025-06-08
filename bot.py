@@ -383,7 +383,7 @@ def start(message):
                 else:
                   text = f"🎥\t*{title}*\n\n✂️ *size - {data[0]['size']}*\n\n🔗 {link}\n\n*⚡powered by* @GdtotLinkz"
                 bot.delete_message(chat_id=message.chat.id, message_id=message_ids)
-                button1 = telebot.types.InlineKeyboardButton(text=f"Fast Dowload 🚀", url='https://modijiurl.com/DDLHVN')
+                button1 = telebot.types.InlineKeyboardButton(text=f"Fast Dowload 🚀", url='https://gplinks.co/DDLHVN')
                 keyboard = telebot.types.InlineKeyboardMarkup().add(button1)
                 message_ids = bot.reply_to(message, text=text, parse_mode='markdown', disable_web_page_preview=True,reply_markup=keyboard)
                 print(f"[STATUS] :{message.chat.id} got link {title}")
@@ -1281,8 +1281,8 @@ def generate_adlink(message):
     if status:
         # html = requests.get(f"https://modijiurl.com/api?api=38a81844c96d9984e51ef0111477ecd81213f3db&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
     # html = requests.get(f"https://instantearn.in/api?api=ea5f98c8b2dd2ae839a35fb9f703826878ff36d7&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
-    # html = requests.get(f"https://gplinks.in/api?api=14babc9511f3680505742438efe33ba2c7026c43&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
-        html = requests.get(f"https://publicearn.com/api?api=a1bb968c95a6bbe5b9ad636986ad36dc5276bbdb&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
+        html = requests.get(f"https://gplinks.in/api?api=14babc9511f3680505742438efe33ba2c7026c43&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
+        # html = requests.get(f"https://publicearn.com/api?api=a1bb968c95a6bbe5b9ad636986ad36dc5276bbdb&url=https://t.me/DriveMovie_bot?start={generate_short_token(message)}")
         linker = json.loads(html.text)['shortenedUrl']
         html = requests.get(linker)
         return html.url
