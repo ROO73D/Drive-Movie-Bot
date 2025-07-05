@@ -149,7 +149,7 @@ user_search_results = {}  # Format: {user_id: {'results': [...], 'timestamp': da
 def appdrive(link,id,message):
   data = []
   url = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://appdrive.pro/file/',link.strip())
-  url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://appdrive.cloud/file/',link.strip())
+  url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://appdrive.fit/file/',link.strip())
   html = requests.get(url1.strip())
   soup = BeautifulSoup(html.text,'lxml')
   if soup.title.text != 'AppDrive':
@@ -464,7 +464,7 @@ def handle_all_messages(message):
                     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                 }
               url = re.sub(r'https:\/\/[a-zA-Z0-9._]+\/drive\/', 'https://hubcloud.day/drive/', i.strip())
-              url1 = re.sub(r'https:\/\/[a-zA-Z0-9._]+\/drive\/', 'https://hubcloud.day/drive/', i.strip())
+              url1 = re.sub(r'https:\/\/[a-zA-Z0-9._]+\/drive\/', 'https://hubcloud.one/drive/', i.strip())
               response = requests.get(url1, headers=headers)
               print(response.status_code)
               soup = BeautifulSoup(response.text, 'html.parser')
@@ -531,7 +531,7 @@ def handle_all_messages(message):
               bot.reply_to(message, text=f"Added {url1} to DB , thank you !!", parse_mode="html", disable_web_page_preview=True)
             elif 'gdtot' in i:
               url = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new6.gdtot.cfd/file/',i.strip())
-              url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new10.gdtot.dad/file/',i.strip())
+              url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new20.gdtot.dad/file/',i.strip())
               html = requests.get(f"{url1}",headers=headers)
               soup = BeautifulSoup(html.text,'lxml')
               title = soup.title.text[8::]
@@ -684,7 +684,7 @@ def handle_all_messages(message):
             elif 'gdflix' in i:
               data = []
               url = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://gdflix.lol/file/',i.strip())
-              url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new6.gdflix.cfd/file/',i.strip())
+              url1 = re.sub(r'https:\/\/[a-zA-Z1-90.]+\/file\/','https://new10.gdflix.dad/file/',i.strip())
               headers = {
                   'authority': 'new1.gdflix.cfd',
                   'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
