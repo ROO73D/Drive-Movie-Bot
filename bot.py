@@ -280,7 +280,7 @@ def handle_broadcast( message):
     try:
         try:
             image = message.reply_to_message.photo[-1].file_id  # Get the highest quality image
-            caption = message.reply_to_message.caption.replace('.',"\.").replace("/","\/").replace("=","\=")
+            caption = message.reply_to_message.caption.replace('.',"\.").replace("/","\/").replace("=","\=").replace("(","\(").replace(")","\)")
             caption = "||"+caption+"||"
         except Exception as e:
             broadcast_message = " ".join(message.text.split()[1:])
@@ -1332,3 +1332,4 @@ if __name__ == '__main__':
     asyncio.run(main())
 
 print(f"[STATUS] : Bot stopped")
+
